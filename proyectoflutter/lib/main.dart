@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -106,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.push(
       context,
       //MaterialPageRoute(builder: (context) => SecondRoute(_email , _password)),
-      MaterialPageRoute(builder: (context) => ThirdRoute()),
+      MaterialPageRoute(builder: (context) => ThirdRoute(_email, _password)),
     );
   }
 
@@ -150,8 +150,8 @@ class SecondRoute extends StatelessWidget {
 class Places{
   final String name ;
   final String address;
-  final String lat ;
-  final String lng ;
+  final double lat ;
+  final double lng ;
   final String city ;
   final String state ;
   final String country;
@@ -166,16 +166,21 @@ class Places{
 
 class ThirdRoute extends StatelessWidget {
   String thing , city;
+  ThirdRoute(_email , _password){
+    thing= _email;
+    city = _password;
+  }
 
 Future<List<Places>> _getPlaces() async{
-  var data = await http.get("https://api.foursquare.com/v2/venues/search?client_id=U01ZTHJ1Y10MTKDX120LXSUWG2PPKYN5SJ3DVPVIHSCESPZS&client_secret=DTIY5LWEEE02HVLJBCSNKQTA3E3KKI3JRHX1FUDUAS0V1LJS&near=Nantes&query=kebab&v=20190811");
+  var data = await http.get("https://api.foursquare.com/v2/venues/search?client_id=U01ZTHJ1Y10MTKDX120LXSUWG2PPKYN5SJ3DVPVIHSCESPZS&client_secret=DTIY5LWEEE02HVLJBCSNKQTA3E3KKI3JRHX1FUDUAS0V1LJS&near=${city}&query=${thing}&v=20190811");
 var jsonData = json.decode(data.body);
 List<Places> places = [];
 for(var u in jsonData['response']['venues']){
-  Places place = Places(u['name'],u['location']['address'],u['categories'][0]['icon']['prefix']+'88'+'.png',u["name"],u["name"],u["name"],u["name"]);
+  Places place = Places(u['name'],u['location']['address'],u['categories'][0]['icon']['prefix']+'88'+'.png',u['location']['labeledLatLngs'][0]['lat'],u['location']['labeledLatLngs'][0]['lng'],u["name"],u["name"]);
   places.add(place);
   //print(u['location']['address']);
-  print(u['categories'][0]['icon']['prefix']+'88'+'.png');
+ // print(u['categories'][0]['icon']['prefix']+'88'+'.png');
+  print(u['location']['labeledLatLngs'][0]['lat']);
 }
 print(places.length);
 return places;
@@ -189,6 +194,7 @@ return places;
       ),
       body: Center(
         child: FutureBuilder(
+
           future: _getPlaces(),
           builder: (BuildContext context , AsyncSnapshot snapshot){
             if(snapshot.data == null){
@@ -204,7 +210,7 @@ return places;
                   if(snapshot.data[index].city == null ||snapshot.data[index].country == null ){
 
                     return ListTile(
-
+                        onTap: () => launch('https://www.google.fr/maps/@${snapshot.data[index].lat},${snapshot.data[index].lng},20z'),
                       leading: CircleAvatar(
                         backgroundImage: NetworkImage(
                             "https://ss3.4sqi.net/img/categories_v2/food/middleeastern_88.png"
@@ -217,6 +223,7 @@ return places;
                     );
                   }else {
                     return ListTile(
+                        onTap: () => launch('https://www.google.fr/maps/@${snapshot.data[index].lat},${snapshot.data[index].lng},20z'),
                       leading: CircleAvatar(
                         backgroundImage: NetworkImage(
                           snapshot.data[index].country
@@ -245,7 +252,9 @@ return places;
             }
 
           },
+
         ),
+
       ),
     );
   }
